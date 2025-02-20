@@ -1,0 +1,10 @@
+# Default configuration for Data Guardian
+
+# Data limit in bytes before triggering alerts
+data_limit = 1073741824 # 1 GB
+
+# How often to check process data usage (in seconds)
+check_interval_seconds = 60
+
+# How often to save usage data to disk (in seconds)
+persistence_interval_seconds = 300 # 5 minutes
