@@ -1,0 +1,13 @@
+[package]
+name = "data-guardian"
+version = "0.1.0"
+edition = "2021"
+authors = ["Success Kingsley <hello@xosnrdev.tech>"]
+description = "System service for monitoring and optimizing app data usage"
+repository = "https://github.com/xosnrdev/data-guardian"
+homepage = "https://github.com/xosnrdev/data-guardian?tab=readme-ov-file"
+license = "MIT"
+
+[[bin]]
+name = "dg"
+path = "src/main.rs"
