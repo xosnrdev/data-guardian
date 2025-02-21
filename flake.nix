@@ -33,6 +33,7 @@
             pkgs.cargo-edit
             pkgs.cargo-dist
             pkgs.cargo-audit
+            pkgs.git
           ];
           shellHook = ''
             export RUST_BACKTRACE=1
