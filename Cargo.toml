@@ -29,3 +29,17 @@ tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 
 [dev-dependencies]
 tempfile = "3.17.1"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = 'abort'
+strip = true
+debug = false
+incremental = false
+overflow-checks = false
+
+[profile.dev]
+opt-level = 0
+debug = true
