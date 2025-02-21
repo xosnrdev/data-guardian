@@ -1,12 +1,18 @@
 [package]
 name = "data-guardian"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 authors = ["Success Kingsley <hello@xosnrdev.tech>"]
 description = "System service for monitoring and optimizing app data usage"
 repository = "https://github.com/xosnrdev/data-guardian"
 homepage = "https://github.com/xosnrdev/data-guardian?tab=readme-ov-file"
 license = "MIT"
+
+[package.metadata.wix]
+upgrade-guid = "071B06A3-F461-4809-9558-77DC19496C2A"
+path-guid = "3770EDFA-F55A-4C9F-BAFC-CD8EDDC096F1"
+license = false
+eula = false
 
 [[bin]]
 name = "dg"
@@ -43,3 +49,8 @@ overflow-checks = false
 [profile.dev]
 opt-level = 0
 debug = true
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"

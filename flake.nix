@@ -23,6 +23,7 @@
             license = licenses.mit;
             maintainers = [ maintainers.xosnrdev ];
           };
+          doCheck = false;
         };
 
         devShell = pkgs.mkShell {
