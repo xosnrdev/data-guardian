@@ -60,18 +60,36 @@ cargo install data-guardian
 
 ### Configuration
 
-Create or modify `~/.config/DataGuardian/local.toml`:
+The service can be configured in three ways (in order of precedence):
 
-```toml
-# Data limit in bytes before triggering alerts
-data_limit = 1073741824  # 1 GB
+1. Environment variables:
+   ```bash
+   DATAGUARDIAN_DATA_LIMIT=1073741824
+   DATAGUARDIAN_CHECK_INTERVAL_SECONDS=60
+   DATAGUARDIAN_PERSISTENCE_INTERVAL_SECONDS=300
+   ```
 
-# How often to check process data usage (in seconds)
-check_interval_seconds = 60
+2. User configuration file at:
+   - Linux: `~/.config/DataGuardian/config.toml`
+   - macOS: `~/Library/Application Support/DataGuardian/config.toml`
+   - Windows: `%APPDATA%\DataGuardian\config.toml`
 
-# How often to save usage data to disk (in seconds)
-persistence_interval_seconds = 300  # 5 minutes
-```
+   Example `config.toml`:
+   ```toml
+   # Data limit in bytes before triggering alerts
+   data_limit = 1073741824  # 1 GB
+
+   # How often to check process data usage (in seconds)
+   check_interval_seconds = 60
+
+   # How often to save usage data to disk (in seconds)
+   persistence_interval_seconds = 300  # 5 minutes
+   ```
+
+3. Default values:
+   - `data_limit`: 1 GB (1073741824 bytes)
+   - `check_interval_seconds`: 60 seconds
+   - `persistence_interval_seconds`: 300 seconds (5 minutes)
 
 ### Environment Variables
 
