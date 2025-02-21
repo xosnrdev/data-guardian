@@ -9,3 +9,7 @@ pub mod settings;
 
 pub use notification::alert_user;
 pub use settings::Settings;
+
+pub use compression::CompressionError;
+pub use notification::NotificationError;
+pub use settings::SettingsError;
