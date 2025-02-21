@@ -72,14 +72,31 @@ impl Settings {
     ///
     /// # Configuration Sources (in order of precedence)
     /// 1. Environment variables with prefix "DATAGUARDIAN_"
-    /// 2. User's local config file (~/.config/DataGuardian/local.toml)
-    /// 3. Default config file (config/default.toml)
+    /// 2. User's local config file (~/.config/DataGuardian/config.toml)
+    /// 3. Default values if no config files exist
     ///
     /// # Returns
     /// * `Ok(Settings)` - Valid settings instance
     /// * `Err(SettingsError)` - If loading or validation fails
     pub fn new() -> Result<Self, SettingsError> {
-        let builder = Self::create_config_builder()?;
+        let mut builder = Config::builder();
+
+        // Add environment variables (highest precedence)
+        builder = builder.add_source(Environment::with_prefix("DATAGUARDIAN"));
+
+        // Add user config if it exists
+        if let Some(config_path) = get_user_config_path() {
+            if config_path.exists() {
+                builder = builder.add_source(File::from(config_path));
+            }
+        }
+
+        // Add default values (lowest precedence)
+        builder = builder.set_default("data_limit", DEFAULT_DATA_LIMIT)?;
+        builder = builder.set_default("check_interval_seconds", DEFAULT_CHECK_INTERVAL)?;
+        builder =
+            builder.set_default("persistence_interval_seconds", DEFAULT_PERSISTENCE_INTERVAL)?;
+
         let settings: Settings = builder.build()?.try_deserialize()?;
         settings.validate()?;
         Ok(settings)
@@ -130,34 +147,13 @@ impl Settings {
 
         Ok(())
     }
-
-    /// Creates a config builder with all sources configured
-    fn create_config_builder(
-    ) -> Result<config::ConfigBuilder<config::builder::DefaultState>, SettingsError> {
-        let mut builder = Config::builder();
-
-        // Add default config
-        builder = builder.add_source(File::with_name("config/default"));
-
-        // Add user config if it exists
-        if let Some(config_path) = get_user_config_path() {
-            if config_path.exists() {
-                builder = builder.add_source(File::from(config_path));
-            }
-        }
-
-        // Add environment variables
-        builder = builder.add_source(Environment::with_prefix("DATAGUARDIAN"));
-
-        Ok(builder)
-    }
 }
 
 /// Gets the path to the user's configuration file
 #[inline]
 fn get_user_config_path() -> Option<PathBuf> {
     ProjectDirs::from("com", "DataGuardian", "DataGuardian")
-        .map(|proj_dirs| proj_dirs.config_dir().join("local.toml"))
+        .map(|proj_dirs| proj_dirs.config_dir().join("config.toml"))
 }
 
 #[cfg(test)]
