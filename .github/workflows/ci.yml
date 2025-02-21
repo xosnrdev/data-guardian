@@ -140,7 +140,7 @@ jobs:
   release:
     name: Release Build
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [test, security-audit, coverage, publish-dry-run, cross-compile]
+    needs: [test, security-audit, coverage, msrv, publish-dry-run, cross-compile]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
