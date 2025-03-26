@@ -23,7 +23,7 @@ mod tests {
             #[cfg(target_os = "linux")]
             {
                 assert!(
-                    matches!(result, Err(data_guardian::NotificationError::ShowError(_))),
+                    matches!(result, Err(NotificationError::ShowError(_))),
                     "Notification should fail gracefully in Linux CI environment"
                 );
             }
