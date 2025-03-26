@@ -7,8 +7,7 @@ use std::time::{Duration, Instant};
 use thiserror::Error;
 use tracing::{debug, error, info};
 
-/// Default cooldown duration between notifications
-pub const DEFAULT_COOLDOWN: Duration = Duration::from_secs(300); // 5 minutes cooldown
+pub const DEFAULT_COOLDOWN: Duration = Duration::from_secs(300);
 
 #[derive(Error, Debug)]
 pub enum NotificationError {
@@ -20,8 +19,6 @@ pub enum NotificationError {
     LockError,
 }
 
-/// NotificationManager handles the state and logic for sending notifications
-/// with cooldown periods.
 #[derive(Debug)]
 pub struct NotificationManager {
     cooldown: Duration,
@@ -35,7 +32,6 @@ impl Default for NotificationManager {
 }
 
 impl NotificationManager {
-    /// Creates a new NotificationManager with the specified cooldown duration
     pub fn new(cooldown: Duration) -> Self {
         Self {
             cooldown,
@@ -43,7 +39,6 @@ impl NotificationManager {
         }
     }
 
-    /// Checks if an app is in cooldown period
     pub fn is_in_cooldown(&self, app: &str) -> Result<bool, NotificationError> {
         let now = Instant::now();
         let last_notifications = self
@@ -56,7 +51,6 @@ impl NotificationManager {
             .is_some_and(|last_time| now.duration_since(*last_time) < self.cooldown))
     }
 
-    /// Updates the last notification time for an app
     fn update_last_notification(&self, app: &str) -> Result<(), NotificationError> {
         let mut last_notifications = self
             .last_notifications
@@ -67,33 +61,17 @@ impl NotificationManager {
         Ok(())
     }
 
-    /// Send a notification to the user about data usage.
-    ///
-    /// # Arguments
-    /// * `app` - The name of the application that exceeded its data limit
-    ///
-    /// # Platform Support
-    /// * Linux: Uses `notify-rust`
-    /// * macOS: Uses `osascript`
-    /// * Windows: Uses `notify-rust`
-    ///
-    /// # Returns
-    /// * `Ok(())` if the notification was sent successfully
-    /// * `Err(NotificationError)` if the notification failed
     pub fn alert_user(&self, app: &str) -> Result<(), NotificationError> {
         if self.is_in_cooldown(app)? {
             debug!(%app, "Skipping notification due to cooldown");
             return Err(NotificationError::Cooldown);
         }
 
-        // Update cooldown state before sending notification
         self.update_last_notification(app)?;
 
-        // Send notification after cooldown is set
         match self.send_platform_notification(app) {
             Ok(()) => Ok(()),
             Err(e) => {
-                // If notification fails, we should still keep the cooldown
                 debug!(%app, "Notification failed but keeping cooldown");
                 Err(e)
             }
@@ -163,10 +141,8 @@ impl NotificationManager {
     }
 }
 
-// Global instance for backward compatibility
 static NOTIFICATION_MANAGER: OnceLock<NotificationManager> = OnceLock::new();
 
-/// Send a notification using the global notification manager
 pub fn alert_user(app: &str) -> Result<(), NotificationError> {
     let manager = NOTIFICATION_MANAGER.get_or_init(NotificationManager::default);
     manager.alert_user(app)
@@ -179,7 +155,6 @@ mod tests {
 
     use super::*;
 
-    // Increased cooldown for more reliable testing in CI
     const TEST_COOLDOWN: Duration = Duration::from_secs(1);
     const THREAD_COUNT: usize = 4;
     const POLL_INTERVAL: Duration = Duration::from_millis(10);
@@ -261,27 +236,22 @@ mod tests {
         let manager = NotificationManager::new(TEST_COOLDOWN);
         let app = "test_cooldown_app";
 
-        // First notification attempt
         let result1 = manager.alert_user(app);
         if !is_ci_environment() {
             assert!(result1.is_ok(), "First notification should succeed");
         }
 
-        // Wait for cooldown state to be set
         wait_for_cooldown_state(&manager, app, true);
 
-        // Second notification attempt should be in cooldown
         let result2 = manager.alert_user(app);
         assert!(
             matches!(result2, Err(NotificationError::Cooldown)),
             "Second notification should be in cooldown"
         );
 
-        // Wait for cooldown to expire
         thread::sleep(TEST_COOLDOWN * 2);
         wait_for_cooldown_state(&manager, app, false);
 
-        // Third notification attempt after cooldown
         let result3 = manager.alert_user(app);
         if !is_ci_environment() {
             assert!(
@@ -297,13 +267,10 @@ mod tests {
         let app = "test_concurrent_app";
         let barrier = Arc::new(Barrier::new(THREAD_COUNT));
 
-        // First notification to establish cooldown
         let _ = manager.alert_user(app);
 
-        // Wait for cooldown state to be set
         wait_for_cooldown_state(&manager, app, true);
 
-        // Spawn threads that will all try to notify simultaneously
         let handles: Vec<_> = (0..THREAD_COUNT)
             .map(|_| {
                 let app = app.to_string();
@@ -318,7 +285,6 @@ mod tests {
             })
             .collect();
 
-        // All concurrent notifications should be in cooldown
         for handle in handles {
             let result = handle.join().unwrap();
             assert!(

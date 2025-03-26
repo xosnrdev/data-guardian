@@ -1,16 +1,3 @@
-//! Settings management for Data Guardian
-//!
-//! This module handles configuration settings for the Data Guardian service,
-//! providing validation, defaults, and loading from various sources.
-//!
-//! # Example
-//! ```
-//! use data_guardian::settings::Settings;
-//!
-//! let settings = Settings::new().unwrap();
-//! assert!(settings.data_limit > 0);
-//! ```
-
 use std::path::PathBuf;
 
 use color_eyre::Result;
@@ -19,21 +6,14 @@ use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-/// Minimum data limit (1MB)
 pub const MIN_DATA_LIMIT: u64 = 1024 * 1024;
-/// Minimum check interval (1 second)
 pub const MIN_CHECK_INTERVAL: u64 = 1;
-/// Minimum persistence interval (10 seconds)
 pub const MIN_PERSISTENCE_INTERVAL: u64 = 10;
 
-/// Default data limit (1GB)
 pub const DEFAULT_DATA_LIMIT: u64 = 1024 * 1024 * 1024;
-/// Default check interval (60 seconds)
 pub const DEFAULT_CHECK_INTERVAL: u64 = 60;
-/// Default persistence interval (5 minutes)
 pub const DEFAULT_PERSISTENCE_INTERVAL: u64 = 300;
 
-/// Errors that can occur during settings operations
 #[derive(Error, Debug)]
 pub enum SettingsError {
     #[error("Invalid data limit: {0} (min: {1})")]
@@ -46,14 +26,10 @@ pub enum SettingsError {
     Config(#[from] config::ConfigError),
 }
 
-/// Settings for the Data Guardian service
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
 pub struct Settings {
-    /// Data limit in bytes before triggering alerts
     pub data_limit: u64,
-    /// How often to check process data usage (in seconds)
     pub check_interval_seconds: u64,
-    /// How often to save usage data to disk (in seconds)
     pub persistence_interval_seconds: u64,
 }
 
@@ -68,30 +44,17 @@ impl Default for Settings {
 }
 
 impl Settings {
-    /// Creates a new Settings instance with values from config files and environment
-    ///
-    /// # Configuration Sources (in order of precedence)
-    /// 1. Environment variables with prefix "DATAGUARDIAN_"
-    /// 2. User's local config file (~/.config/DataGuardian/config.toml)
-    /// 3. Default values if no config files exist
-    ///
-    /// # Returns
-    /// * `Ok(Settings)` - Valid settings instance
-    /// * `Err(SettingsError)` - If loading or validation fails
     pub fn new() -> Result<Self, SettingsError> {
         let mut builder = Config::builder();
 
-        // Add environment variables (highest precedence)
         builder = builder.add_source(Environment::with_prefix("DATAGUARDIAN"));
 
-        // Add user config if it exists
         if let Some(config_path) = get_user_config_path() {
             if config_path.exists() {
                 builder = builder.add_source(File::from(config_path));
             }
         }
 
-        // Add default values (lowest precedence)
         builder = builder.set_default("data_limit", DEFAULT_DATA_LIMIT)?;
         builder = builder.set_default("check_interval_seconds", DEFAULT_CHECK_INTERVAL)?;
         builder =
@@ -102,13 +65,7 @@ impl Settings {
         Ok(settings)
     }
 
-    /// Creates a new Settings instance from a specific configuration file
-    ///
-    /// This is useful for testing or when you want to load settings from
-    /// a non-standard location.
-    ///
-    /// # Arguments
-    /// * `config_path` - Path to the configuration file
+    #[cfg(test)]
     pub fn from_file(config_path: impl AsRef<std::path::Path>) -> Result<Self, SettingsError> {
         let settings: Settings = Config::builder()
             .add_source(File::from(config_path.as_ref()))
@@ -118,11 +75,6 @@ impl Settings {
         Ok(settings)
     }
 
-    /// Validates the settings values
-    ///
-    /// # Returns
-    /// * `Ok(())` - If all settings are valid
-    /// * `Err(SettingsError)` - If any setting is invalid
     pub fn validate(&self) -> Result<(), SettingsError> {
         if self.data_limit < MIN_DATA_LIMIT {
             return Err(SettingsError::InvalidDataLimit(
@@ -149,7 +101,6 @@ impl Settings {
     }
 }
 
-/// Gets the path to the user's configuration file
 #[inline]
 fn get_user_config_path() -> Option<PathBuf> {
     ProjectDirs::from("com", "DataGuardian", "DataGuardian")
@@ -186,14 +137,12 @@ mod tests {
 
     #[test]
     fn test_validate_data_limit() {
-        // Test invalid data limit
         let settings = Settings {
             data_limit: MIN_DATA_LIMIT - 1,
             ..Default::default()
         };
         assert!(settings.validate().is_err());
 
-        // Test valid data limit
         let settings = Settings {
             data_limit: MIN_DATA_LIMIT,
             ..Default::default()
@@ -203,14 +152,12 @@ mod tests {
 
     #[test]
     fn test_validate_check_interval() {
-        // Test invalid check interval
         let settings = Settings {
             check_interval_seconds: MIN_CHECK_INTERVAL - 1,
             ..Default::default()
         };
         assert!(settings.validate().is_err());
 
-        // Test valid check interval
         let settings = Settings {
             check_interval_seconds: MIN_CHECK_INTERVAL,
             ..Default::default()
@@ -220,14 +167,12 @@ mod tests {
 
     #[test]
     fn test_validate_persistence_interval() {
-        // Test invalid persistence interval
         let settings = Settings {
             persistence_interval_seconds: MIN_PERSISTENCE_INTERVAL - 1,
             ..Default::default()
         };
         assert!(settings.validate().is_err());
 
-        // Test valid persistence interval
         let settings = Settings {
             persistence_interval_seconds: MIN_PERSISTENCE_INTERVAL,
             ..Default::default()
@@ -240,7 +185,6 @@ mod tests {
         let dir = tempdir().unwrap();
         let config_path = dir.path().join("test_config.toml");
 
-        // Create a test config file
         let config_content = format!(
             r#"
             data_limit = {}
@@ -253,7 +197,6 @@ mod tests {
         );
         fs::write(&config_path, config_content).unwrap();
 
-        // Load and verify settings
         let settings = Settings::from_file(&config_path).unwrap();
         assert_eq!(settings.data_limit, MIN_DATA_LIMIT * 2);
         assert_eq!(settings.check_interval_seconds, MIN_CHECK_INTERVAL * 2);

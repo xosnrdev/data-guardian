@@ -69,7 +69,7 @@
 
         <Package Id='*'
             Keywords='Installer'
-            Description='System service for monitoring and optimizing app data usage'
+            Description='System utility that monitors the disk I/O usage of applications running on your computer'
             Manufacturer='Success Kingsley'
             InstallerVersion='450'
             Languages='1033'

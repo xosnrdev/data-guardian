@@ -1,32 +1,33 @@
 # Data Guardian
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Rust Version](https://img.shields.io/badge/rust-1.78%2B-orange.svg)
-![Platform Support](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)
 [![CI](https://github.com/xosnrdev/data-guardian/actions/workflows/ci.yml/badge.svg)](https://github.com/xosnrdev/data-guardian/actions/workflows/ci.yml)
+![Rust Version](https://img.shields.io/badge/rust-1.85%2B-orange.svg)
+![Platform Support](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Data Guardian is a system service for monitoring and optimizing application data usage. It provides real-time monitoring, alerts, and insights into how applications consume data on your system.
+Data Guardian is a system utility that monitors the disk I/O usage of applications running on your computer. It tracks read/write operations and alerts you when applications exceed a configured data threshold.
 
 ## Features
 
-- **Real-time Monitoring**: Track data usage across all running applications
-- **Smart Alerts**: Receive notifications when applications exceed data thresholds
-- **Local-First**: All data processing happens locally for maximum privacy
-- **Efficient Storage**: Compressed historical data for trend analysis
-- **Cross-Platform**: Supports Linux, macOS, and Windows
-- **Low Overhead**: Minimal system resource usage
-- **Configurable**: Flexible settings for thresholds and intervals
+- [x] **Process Monitoring**: Tracks disk read/write operations across all running processes
+- [x] **Threshold Alerts**: Receive notifications when applications exceed data thresholds
+- [x] **Local-First**: All data processing happens locally for maximum privacy
+- [x] **Efficient Storage**: Compressed historical data with configurable compression levels
+- [x] **Cross-Platform**: Supports Linux, macOS, and Windows with platform-specific notifications
+- [x] **Low Overhead**: Minimal system resource usage with efficient process scanning
+- [x] **Configurable**: Flexible settings for thresholds and check intervals
+- [x] **Smart Notification System**: Built-in cooldown period to prevent notification spam
 
 ## Installation
 
 ### Prerequisites
 
-- Rust 1.78 or higher
+- Rust 1.85 or higher
 - Cargo package manager
 - Platform-specific dependencies:
-  - Linux: `libdbus-1-dev`
-  - macOS: None
-  - Windows: None
+  - Linux: `libdbus-1-dev` (for notifications via notify-rust)
+  - macOS: None (uses osascript for notifications)
+  - Windows: None (uses notify-rust for notifications)
 
 ### From Source
 
@@ -45,24 +46,30 @@ cargo install --path .
 cargo install data-guardian
 ```
 
+### From Release
+
+see [https://github.com/xosnrdev/data-guardian/releases](https://github.com/xosnrdev/data-guardian/releases)
+
 ## Usage
 
 ### Quick Start
 
 1. Start the service:
+
    ```bash
    dg
    ```
 
-2. The service will run in the background and monitor data usage
+2. The service will run in the background and monitor disk I/O usage of all processes
 
-3. Receive notifications when applications exceed thresholds
+3. Receive notifications when applications exceed configured thresholds
 
 ### Configuration
 
 The service can be configured in three ways (in order of precedence):
 
 1. Environment variables:
+
    ```bash
    DATAGUARDIAN_DATA_LIMIT=1073741824
    DATAGUARDIAN_CHECK_INTERVAL_SECONDS=60
@@ -75,6 +82,7 @@ The service can be configured in three ways (in order of precedence):
    - Windows: `%APPDATA%\DataGuardian\config.toml`
 
    Example `config.toml`:
+
    ```toml
    # Data limit in bytes before triggering alerts
    data_limit = 1073741824  # 1 GB
@@ -93,65 +101,18 @@ The service can be configured in three ways (in order of precedence):
 
 ### Environment Variables
 
-- `DATAGUARDIAN_DATA_LIMIT`: Override data limit
-- `DATAGUARDIAN_CHECK_INTERVAL_SECONDS`: Override check interval
-- `DATAGUARDIAN_PERSISTENCE_INTERVAL_SECONDS`: Override persistence interval
+- `DATAGUARDIAN_DATA_LIMIT`: Override data limit (minimum: 1MB)
+- `DATAGUARDIAN_CHECK_INTERVAL_SECONDS`: Override check interval (minimum: 1 second)
+- `DATAGUARDIAN_PERSISTENCE_INTERVAL_SECONDS`: Override persistence interval (minimum: 10 seconds)
 - `RUST_LOG`: Set logging level (error, warn, info, debug, trace)
 
-## Development
+### Limitations
 
-### Building
-
-```bash
-# Build debug version
-cargo build
-
-# Build release version
-cargo build --release
-```
-
-### Testing
-
-```bash
-# Run all tests
-make test
-
-# Run specific test
-cargo test test_name
-
-# Run with logging
-cargo test -- --nocapture
-```
-
-### Code Quality
-
-```bash
-# Run all checks
-make all
-
-# Format code
-make fmt
-
-# Run lints
-make lint
-```
+- Only tracks processes while the service is running
+- Uses a single global threshold rather than per-application limits
+- May have different behavior on different platforms
+- Focuses only on disk I/O (not network or other resource usage)
 
 ## License
 
-Licensed under the [MIT License](LICENSE)
-
-## Acknowledgments
-
-- [sysinfo](https://github.com/GuillaumeGomez/sysinfo) for system information
-- [notify-rust](https://github.com/hoodie/notify-rust) for notifications
-- [tokio](https://tokio.rs/) for async runtime
-
-## Roadmap
-
-- [ ] Web interface for data visualization
-- [ ] Application grouping and categories
-- [ ] Network interface filtering
-- [ ] Custom alert rules
-- [ ] Data usage predictions
-- [ ] Export and reporting features
-
+[MIT License](LICENSE)
