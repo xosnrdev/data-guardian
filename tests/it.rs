@@ -1,4 +1,4 @@
-use data_guardian::{alert_user, Settings};
+use data_guardian::{Settings, alert_user};
 
 #[tokio::test]
 async fn test_settings_load() {

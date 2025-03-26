@@ -1,7 +1,7 @@
 # Data Guardian
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Rust Version](https://img.shields.io/badge/rust-1.78%2B-orange.svg)
+![Rust Version](https://img.shields.io/badge/rust-1.85%2B-orange.svg)
 ![Platform Support](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)
 [![CI](https://github.com/xosnrdev/data-guardian/actions/workflows/ci.yml/badge.svg)](https://github.com/xosnrdev/data-guardian/actions/workflows/ci.yml)
 
@@ -21,7 +21,7 @@ Data Guardian is a system service for monitoring and optimizing application data
 
 ### Prerequisites
 
-- Rust 1.78 or higher
+- Rust 1.85 or higher
 - Cargo package manager
 - Platform-specific dependencies:
   - Linux: `libdbus-1-dev`
@@ -50,6 +50,7 @@ cargo install data-guardian
 ### Quick Start
 
 1. Start the service:
+
    ```bash
    dg
    ```
@@ -63,6 +64,7 @@ cargo install data-guardian
 The service can be configured in three ways (in order of precedence):
 
 1. Environment variables:
+
    ```bash
    DATAGUARDIAN_DATA_LIMIT=1073741824
    DATAGUARDIAN_CHECK_INTERVAL_SECONDS=60
@@ -75,6 +77,7 @@ The service can be configured in three ways (in order of precedence):
    - Windows: `%APPDATA%\DataGuardian\config.toml`
 
    Example `config.toml`:
+
    ```toml
    # Data limit in bytes before triggering alerts
    data_limit = 1073741824  # 1 GB
@@ -154,4 +157,3 @@ Licensed under the [MIT License](LICENSE)
 - [ ] Custom alert rules
 - [ ] Data usage predictions
 - [ ] Export and reporting features
-

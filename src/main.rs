@@ -1,18 +1,17 @@
 use std::collections::HashMap;
 use std::io::IsTerminal;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
-use color_eyre::{eyre::Context, Result};
+use color_eyre::{Result, eyre::Context};
 use directories::ProjectDirs;
 use sysinfo::{Pid, System};
-use tokio::time::{interval, Duration};
+use tokio::time::{Duration, interval};
 use tracing::{debug, error, info, instrument};
 
 use data_guardian::{
-    compression,
+    Settings, compression,
     notification::{self, NotificationError},
-    Settings,
 };
 
 /// Type alias for process-specific data, mapping PIDs to (name, usage)
@@ -143,7 +142,7 @@ async fn get_current_processes() -> Result<ProcessData> {
 /// Drops privileges on Unix systems for security
 #[cfg(unix)]
 fn drop_privileges() -> Result<()> {
-    use nix::unistd::{setgid, setuid, Gid, Uid};
+    use nix::unistd::{Gid, Uid, setgid, setuid};
     let uid = Uid::current();
     let gid = Gid::current();
     setgid(gid)?;
@@ -153,7 +152,7 @@ fn drop_privileges() -> Result<()> {
 
 /// Sets up logging with appropriate configuration
 fn setup_logging() -> Result<()> {
-    use tracing_subscriber::{fmt, EnvFilter};
+    use tracing_subscriber::{EnvFilter, fmt};
     fmt()
         .with_env_filter(EnvFilter::from_default_env().add_directive("data_guardian=info".parse()?))
         .with_ansi(std::io::stdout().is_terminal())
