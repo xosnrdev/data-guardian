@@ -423,7 +423,7 @@ dependencies = [
 
 [[package]]
 name = "data-guardian"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "color-eyre",
  "config",
