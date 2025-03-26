@@ -3,7 +3,7 @@ name = "data-guardian"
 version = "1.0.1"
 edition = "2024"
 authors = ["Success Kingsley <hello@xosnrdev.tech>"]
-description = "System service for monitoring and optimizing app data usage"
+description = "System utility that monitors the disk I/O usage of applications running on your computer"
 repository = "https://github.com/xosnrdev/data-guardian"
 homepage = "https://github.com/xosnrdev/data-guardian?tab=readme-ov-file"
 license = "MIT"

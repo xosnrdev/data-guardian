@@ -1,5 +1,5 @@
 {
-  description = "System service for monitoring and optimizing app data usage";
+  description = "System utility that monitors the disk I/O usage of applications running on your computer";
 
   inputs = {
     nixpkgs.url =
