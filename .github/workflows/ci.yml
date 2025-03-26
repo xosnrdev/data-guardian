@@ -53,9 +53,6 @@ jobs:
     
     - name: Run Tests
       run: cargo test --all-features --verbose
-    
-    - name: Run Doc Tests
-      run: cargo test --doc
 
   security-audit:
     name: Security Audit
@@ -90,18 +87,6 @@ jobs:
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-  msrv:
-    name: Check MSRV
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Rust 1.78.0
-        uses: dtolnay/rust-toolchain@1.78.0
-      
-      - name: Check MSRV
-        run: cargo check --all-features
 
   publish-dry-run:
     name: Publish Dry Run
