@@ -1,35 +1,33 @@
+mod data_guardian;
+
 use std::collections::HashMap;
-use std::io::IsTerminal;
+use std::io::{self, IsTerminal};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use color_eyre::{Result, eyre::Context};
+use data_guardian::settings::Settings;
 use directories::ProjectDirs;
 use sysinfo::{Pid, System};
 use tokio::time::{Duration, interval};
 use tracing::{debug, error, info, instrument};
 
 use data_guardian::{
-    Settings, compression,
+    compression,
     notification::{self, NotificationError},
 };
 
-/// Type alias for process-specific data, mapping PIDs to (name, usage)
 type ProcessData = HashMap<Pid, (String, u64)>;
-/// Type alias for aggregated usage data, mapping app names to total usage
 type UsageData = HashMap<String, u64>;
 
-/// Configuration for data persistence
 #[derive(Debug)]
 struct PersistenceConfig {
-    /// Directory for storing data files
-    data_dir: std::path::PathBuf,
-    /// File name for usage data
+    data_dir: PathBuf,
     file_name: &'static str,
 }
 
 impl PersistenceConfig {
-    /// Creates a new persistence configuration
     fn new() -> Option<Self> {
         ProjectDirs::from("com", "DataGuardian", "DataGuardian").map(|dirs| Self {
             data_dir: dirs.data_dir().to_path_buf(),
@@ -37,16 +35,11 @@ impl PersistenceConfig {
         })
     }
 
-    /// Gets the full path to the usage data file
-    fn data_path(&self) -> std::path::PathBuf {
+    fn data_path(&self) -> PathBuf {
         self.data_dir.join(self.file_name)
     }
 }
 
-/// Loads persisted usage data from disk
-///
-/// This function is pure in the sense that it only reads data and doesn't
-/// modify any external state beyond logging.
 #[instrument]
 async fn load_persisted_data() -> Option<UsageData> {
     let config = PersistenceConfig::new()?;
@@ -79,18 +72,11 @@ async fn load_persisted_data() -> Option<UsageData> {
     }
 }
 
-/// Saves usage data to disk with compression
-///
-/// This function handles the entire persistence flow:
-/// 1. Ensures the data directory exists
-/// 2. Compresses the data
-/// 3. Writes the compressed data to disk
 #[instrument(skip(data))]
 async fn save_persisted_data(data: &UsageData) -> Result<()> {
     let config = PersistenceConfig::new()
         .ok_or_else(|| color_eyre::eyre::eyre!("Failed to get project directories"))?;
 
-    // Ensure data directory exists with proper logging
     if !config.data_dir.exists() {
         debug!(?config.data_dir, "Creating data directory");
         tokio::fs::create_dir_all(&config.data_dir)
@@ -100,7 +86,6 @@ async fn save_persisted_data(data: &UsageData) -> Result<()> {
 
     let data_path = config.data_path();
 
-    // Compress and save data with proper error context
     let compressed =
         compression::compress_usage_data(data).context("Failed to compress usage data")?;
 
@@ -113,10 +98,6 @@ async fn save_persisted_data(data: &UsageData) -> Result<()> {
     Ok(())
 }
 
-/// Gets current process data from the system
-///
-/// This function is pure in that it only reads system state and returns
-/// a new data structure without modifying anything.
 #[instrument]
 async fn get_current_processes() -> Result<ProcessData> {
     tokio::task::spawn_blocking(|| {
@@ -139,7 +120,6 @@ async fn get_current_processes() -> Result<ProcessData> {
     .map_err(Into::into)
 }
 
-/// Drops privileges on Unix systems for security
 #[cfg(unix)]
 fn drop_privileges() -> Result<()> {
     use nix::unistd::{Gid, Uid, setgid, setuid};
@@ -150,17 +130,15 @@ fn drop_privileges() -> Result<()> {
     Ok(())
 }
 
-/// Sets up logging with appropriate configuration
 fn setup_logging() -> Result<()> {
     use tracing_subscriber::{EnvFilter, fmt};
     fmt()
         .with_env_filter(EnvFilter::from_default_env().add_directive("data_guardian=info".parse()?))
-        .with_ansi(std::io::stdout().is_terminal())
+        .with_ansi(io::stdout().is_terminal())
         .init();
     Ok(())
 }
 
-/// Monitors process data usage and sends notifications when thresholds are exceeded
 async fn monitor_processes(
     settings: &Settings,
     app_usage: &mut UsageData,
@@ -169,7 +147,6 @@ async fn monitor_processes(
     let current_processes = get_current_processes().await?;
     let mut current_usage = UsageData::with_capacity(current_processes.len());
 
-    // Calculate delta usage for each process
     for (pid, (app_name, current_total)) in &current_processes {
         if let Some((prev_app, prev_total)) = prev_processes.get(pid) {
             if prev_app == app_name {
@@ -181,7 +158,6 @@ async fn monitor_processes(
 
     *prev_processes = current_processes;
 
-    // Update total usage and check thresholds
     for (app, delta) in current_usage {
         let total_usage = app_usage.entry(app.clone()).or_insert(0);
         *total_usage += delta;
@@ -204,19 +180,16 @@ async fn monitor_processes(
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize error handling and logging
     color_eyre::install()?;
     setup_logging()?;
 
     #[cfg(unix)]
     drop_privileges().context("Failed to drop privileges")?;
 
-    // Load settings and initial state
     let settings = Settings::new().context("Failed to load settings")?;
     let mut app_usage = load_persisted_data().await.unwrap_or_default();
     let mut prev_processes = ProcessData::new();
 
-    // Setup graceful shutdown handling
     let running = Arc::new(AtomicBool::new(true));
     let r = running.clone();
     tokio::spawn(async move {
@@ -224,13 +197,11 @@ async fn main() -> Result<()> {
         r.store(false, Ordering::SeqCst);
     });
 
-    // Setup monitoring intervals
     let mut monitor_interval = interval(Duration::from_secs(settings.check_interval_seconds));
     let mut save_interval = interval(Duration::from_secs(settings.persistence_interval_seconds));
 
     info!(?settings, "Starting Data Guardian service");
 
-    // Main service loop
     while running.load(Ordering::SeqCst) {
         tokio::select! {
             _ = monitor_interval.tick() => {
@@ -246,7 +217,6 @@ async fn main() -> Result<()> {
         }
     }
 
-    // Graceful shutdown
     info!("Shutting down gracefully...");
     save_persisted_data(&app_usage).await?;
     Ok(())
