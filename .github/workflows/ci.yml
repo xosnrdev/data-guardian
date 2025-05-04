@@ -2,17 +2,14 @@ name: CI
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
   pull_request:
-    branches: ["**"]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   test:
-    name: Test Suite
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
