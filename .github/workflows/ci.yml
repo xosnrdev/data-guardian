@@ -24,7 +24,7 @@ jobs:
       with:
         components: rustfmt, clippy
     
-    - name: Install Linux Dependencies
+    - name: Install linux dependencies
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
