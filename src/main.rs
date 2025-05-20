@@ -6,7 +6,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use color_eyre::{Result, eyre::Context};
+use color_eyre::Result;
+use color_eyre::eyre::Context;
 use data_guardian::settings::Settings;
 use directories::ProjectDirs;
 use sysinfo::{Pid, System};
